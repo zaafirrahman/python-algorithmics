@@ -131,7 +131,7 @@ while True:
 
 
 
-  if points >= 5:
+  if points >= 3:
        win = Label(0, 0, 500, 500, LIGHT_GREEN)
        win.set_text("Anda menang!!!", 60, DARK_BLUE)
        win.draw(140, 180)
