@@ -33,7 +33,7 @@ class Label(Area):
       mw.blit(self.image, (self.rect.x + shift_x, self.rect.y + shift_y))
 
 
-RED = (255, 0, 0)
+RED = (255, 0, 1)
 GREEN = (0, 255, 51)
 YELLOW = (255, 255, 0)
 DARK_BLUE = (0, 0, 100)
