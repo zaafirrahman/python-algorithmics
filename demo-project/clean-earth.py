@@ -1,5 +1,8 @@
 import pygame
 import random
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
 
 pygame.init()
 
@@ -11,16 +14,16 @@ pygame.display.set_caption("Clean The Earth 🌍")
 clock = pygame.time.Clock()
 
 # ===== LOAD IMAGES =====
-bg_img = pygame.image.load("python-algorithmics/demo-project/landscape.png")
+bg_img = pygame.image.load(BASE_DIR / "landscape.png")
 bg_img = pygame.transform.scale(bg_img, (WIDTH, HEIGHT))
 
-player_img = pygame.image.load("python-algorithmics/demo-project/player.png")
+player_img = pygame.image.load(BASE_DIR / "player.png")
 player_img = pygame.transform.scale(player_img, (60, 60))
 
 # list semua sampah
 trash_images = []
 for i in range(1, 6):
-    img = pygame.image.load(f"python-algorithmics/demo-project/bin{i}.png")
+    img = pygame.image.load(BASE_DIR / f"bin{i}.png")
     img = pygame.transform.scale(img, (40, 40))
     trash_images.append(img)
 
