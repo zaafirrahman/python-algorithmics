@@ -46,7 +46,7 @@ score = 0
 font = pygame.font.SysFont(None, 40)
 
 start_time = pygame.time.get_ticks()
-game_duration = 60000  # 60 sec
+game_duration = 60000  # 60 second
 
 running = True
 
