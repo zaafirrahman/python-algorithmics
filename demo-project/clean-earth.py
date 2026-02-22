@@ -41,7 +41,7 @@ def spawn_trash():
 
 trash_img, trash_rect = spawn_trash()
 
-# ===== SCORE & TIMER =====
+# ===== SCORE & TIMER ====
 score = 0
 font = pygame.font.SysFont(None, 40)
 
