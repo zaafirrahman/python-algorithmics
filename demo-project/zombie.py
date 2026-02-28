@@ -1,8 +1,27 @@
 import pygame
 import random
 import math
+import os
 
 pygame.init()
+
+# =========================
+# AUTO RELATIVE PATH
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS = os.path.join(BASE_DIR, "assets")
+
+def load_image(name, size=None):
+    """Load image dengan relative path + auto scale"""
+    path = os.path.join(ASSETS, name)
+    try:
+        img = pygame.image.load(path).convert_alpha()
+        if size:
+            img = pygame.transform.scale(img, size)
+        return img
+    except:
+        print(f"Gagal load {name}")
+        return None
 
 # =========================
 # SETUP
@@ -21,9 +40,21 @@ BLACK = (0,0,0)
 font = pygame.font.SysFont(None, 36)
 
 # =========================
+# LOAD IMAGES
+# =========================
+background_img = load_image("landscape.png", (WIDTH, HEIGHT))
+player_img = load_image("player.png", (40, 40))
+
+zombie_images = [
+    load_image("zombie1.png", (40, 40)),
+    load_image("zombie2.png", (40, 40)),
+    load_image("zombie3.png", (40, 40))
+]
+
+# =========================
 # PLAYER
 # =========================
-player_size = 30
+player_size = 40
 player_x = WIDTH // 2
 player_y = HEIGHT // 2
 player_speed = 5
@@ -40,7 +71,6 @@ bullet_radius = 5
 # ZOMBIES
 # =========================
 zombies = []
-zombie_size = 30
 zombie_speed = 1.5
 spawn_timer = 0
 
@@ -50,7 +80,6 @@ game_over = False
 # =========================
 # FUNCTIONS
 # =========================
-
 def spawn_zombie():
     side = random.choice(["top","bottom","left","right"])
 
@@ -67,7 +96,8 @@ def spawn_zombie():
         x = WIDTH + 50
         y = random.randint(0, HEIGHT)
 
-    zombies.append([x,y])
+    img = random.choice(zombie_images)
+    zombies.append([x, y, img])
 
 def draw_text(text, x, y):
     img = font.render(text, True, WHITE)
@@ -81,7 +111,12 @@ running = True
 while running:
 
     clock.tick(60)
-    screen.fill(BLACK)
+
+    # DRAW BACKGROUND
+    if background_img:
+        screen.blit(background_img, (0,0))
+    else:
+        screen.fill(BLACK)
 
     # EVENTS
     for event in pygame.event.get():
@@ -95,9 +130,9 @@ while running:
             dy = my - player_y
             dist = math.hypot(dx, dy)
 
-            dx, dy = dx/dist, dy/dist
-
-            bullets.append([player_x, player_y, dx, dy])
+            if dist != 0:
+                dx, dy = dx/dist, dy/dist
+                bullets.append([player_x, player_y, dx, dy])
 
     keys = pygame.key.get_pressed()
 
@@ -112,7 +147,6 @@ while running:
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
             player_y += player_speed
 
-        # BATASI AREA
         player_x = max(0, min(WIDTH, player_x))
         player_y = max(0, min(HEIGHT, player_y))
 
@@ -132,28 +166,31 @@ while running:
 
         # UPDATE ZOMBIES
         for zombie in zombies[:]:
-            dx = player_x - zombie[0]
-            dy = player_y - zombie[1]
+            zx, zy, img = zombie
+
+            dx = player_x - zx
+            dy = player_y - zy
             dist = math.hypot(dx, dy)
 
             if dist != 0:
-                zombie[0] += dx/dist * zombie_speed
-                zombie[1] += dy/dist * zombie_speed
+                zx += dx/dist * zombie_speed
+                zy += dy/dist * zombie_speed
 
-            # tabrak player
-            if dist < 25:
+            zombie[0], zombie[1] = zx, zy
+
+            if dist < 30:
                 player_hp -= 1
 
-        # COLLISION BULLET vs ZOMBIE
+        # COLLISION
         for zombie in zombies[:]:
+            zx, zy, _ = zombie
             for bullet in bullets[:]:
-                if math.hypot(zombie[0]-bullet[0], zombie[1]-bullet[1]) < 20:
+                if math.hypot(zx-bullet[0], zy-bullet[1]) < 25:
                     zombies.remove(zombie)
                     bullets.remove(bullet)
                     score += 1
                     break
 
-        # GAME OVER
         if player_hp <= 0:
             game_over = True
 
@@ -161,16 +198,22 @@ while running:
     # DRAW OBJECTS
     # =========================
 
-    # player
-    pygame.draw.circle(screen, GREEN, (int(player_x), int(player_y)), player_size//2)
+    # PLAYER
+    if player_img:
+        screen.blit(player_img, (player_x-20, player_y-20))
+    else:
+        pygame.draw.circle(screen, GREEN, (int(player_x), int(player_y)), 20)
 
-    # bullets
+    # BULLETS
     for bullet in bullets:
         pygame.draw.circle(screen, WHITE, (int(bullet[0]), int(bullet[1])), bullet_radius)
 
-    # zombies
-    for zombie in zombies:
-        pygame.draw.rect(screen, RED, (zombie[0], zombie[1], zombie_size, zombie_size))
+    # ZOMBIES
+    for zx, zy, img in zombies:
+        if img:
+            screen.blit(img, (zx, zy))
+        else:
+            pygame.draw.rect(screen, RED, (zx, zy, 30, 30))
 
     # UI
     draw_text(f"HP: {player_hp}", 10, 10)
