@@ -1,675 +1,901 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎯 Dart Shooter</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-/* ─── RESET & BASE ─────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dart Shooter Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e63946;
+            --gold: #ffd60a;
+            --green: #57cc99;
+            --dim: #8d99ae;
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --border: #1e1e2e;
+            --text: #edf2f4;
+        }
 
-:root {
-  --red:    #e63946;
-  --gold:   #ffd60a;
-  --green:  #57cc99;
-  --dim:    #8d99ae;
-  --bg:     #0a0a0f;
-  --card:   #12121a;
-  --border: #1e1e2e;
-  --text:   #edf2f4;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
 
-/* scanline overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.05) 2px,
-    rgba(0,0,0,0.05) 4px
-  );
-  pointer-events: none;
-  z-index: 999;
-}
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 3px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
 
-/* ─── SCREENS ──────────────────────────────────────────── */
-.screen {
-  display: none;
-  width: 100%;
-  max-width: 860px;
-  padding: 0 16px;
-  animation: fadeIn .35s ease;
-}
-.screen.active { display: flex; flex-direction: column; align-items: center; }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            animation: fadeIn 0.5s ease;
+        }
 
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(12px); }
-  to   { opacity:1; transform:translateY(0); }
-}
+        .screen.active {
+            display: flex;
+        }
 
-/* ─── LOGO / TITLE ─────────────────────────────────────── */
-.logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(52px, 10vw, 88px);
-  letter-spacing: 6px;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--red) 0%, var(--gold) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: none;
-  filter: drop-shadow(0 0 20px rgba(230,57,70,0.4));
-  margin-bottom: 6px;
-}
-.logo-sub {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 4px;
-  color: var(--dim);
-  text-transform: uppercase;
-  margin-bottom: 40px;
-}
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-/* ─── CARD ─────────────────────────────────────────────── */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 32px;
-  width: 100%;
-  max-width: 420px;
-  position: relative;
-}
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--red), var(--gold));
-}
+        /* Login Screen */
+        .login-card {
+            background: var(--card);
+            padding: 40px 60px;
+            border: 1px solid var(--border);
+            border-top: 2px solid linear-gradient(to right, var(--red), var(--gold));
+            text-align: center;
+            box-shadow: 0 0 20px rgba(230, 57, 70, 0.2);
+        }
 
-.card h2 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 3px;
-  color: var(--dim);
-  margin-bottom: 20px;
-}
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 64px;
+            color: var(--gold);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(255, 214, 10, 0.5);
+        }
 
-/* ─── FORM ELEMENTS ────────────────────────────────────── */
-select, input[type="text"] {
-  width: 100%;
-  background: #0d0d16;
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
-  padding: 12px 14px;
-  border-radius: 3px;
-  outline: none;
-  transition: border-color .2s;
-  margin-bottom: 12px;
-  appearance: none;
-}
-select:focus, input:focus { border-color: var(--red); }
-select option { background: #12121a; }
+        .player-select {
+            margin-bottom: 20px;
+            text-align: left;
+            width: 100%;
+        }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--dim);
-  font-size: 11px;
-  letter-spacing: 2px;
-  margin: 16px 0;
-}
-.divider::before, .divider::after {
-  content: ''; flex: 1;
-  height: 1px;
-  background: var(--border);
-}
+        .player-select label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dim);
+            font-size: 18px;
+        }
 
-/* ─── BUTTONS ──────────────────────────────────────────── */
-.btn {
-  display: block;
-  width: 100%;
-  padding: 13px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
-  letter-spacing: 3px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-primary {
-  background: linear-gradient(135deg, var(--red), #c1121f);
-  color: #fff;
-}
-.btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
-.btn-secondary {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--dim);
-  margin-top: 10px;
-}
-.btn-secondary:hover { border-color: var(--dim); color: var(--text); }
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
 
-.err {
-  color: var(--red);
-  font-size: 12px;
-  font-family: 'Share Tech Mono', monospace;
-  margin-top: 8px;
-  min-height: 18px;
-}
+        select:focus, input:focus {
+            border-color: var(--gold);
+        }
 
-/* ─── HUD ──────────────────────────────────────────────── */
-#gameScreen { gap: 10px; }
+        .btn {
+            background: linear-gradient(to right, var(--red), #c92a38);
+            color: var(--text);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            padding: 12px 48px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-.hud {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 20px;
-}
-.hud-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.hud-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--dim);
-}
-.hud-val {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  line-height: 1;
-}
-#timerVal { color: var(--gold); }
-#scoreVal { color: var(--green); }
-#missVal  { color: var(--red); }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(230, 57, 70, 0.6);
+        }
 
-/* ─── CANVAS ───────────────────────────────────────────── */
-#gameCanvas {
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  cursor: crosshair;
-  display: block;
-  background: #070710;
-  max-width: 100%;
-}
+        .btn-secondary {
+            background: linear-gradient(to right, var(--dim), #6a7785);
+            margin-top: 15px;
+        }
 
-/* ─── LEADERBOARD ──────────────────────────────────────── */
-#lbScreen { gap: 20px; }
+        /* Game Screen */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            padding: 20px;
+        }
 
-.result-banner {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 48px;
-  letter-spacing: 6px;
-}
-.result-banner.win  { color: var(--gold); filter: drop-shadow(0 0 16px rgba(255,214,10,.5)); }
-.result-banner.lose { color: var(--red);  filter: drop-shadow(0 0 16px rgba(230,57,70,.5)); }
+        .hud {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 24px;
+        }
 
-.result-score {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
-  color: var(--dim);
-  letter-spacing: 2px;
-  margin-top: -8px;
-}
+        .hud-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-.lb-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 15px;
-}
-.lb-table th {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--dim);
-  text-align: left;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-}
-.lb-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(30,30,46,0.5);
-  font-weight: 600;
-}
-.lb-table tr.me td { color: var(--gold); }
-.rank-1 td:first-child { color: var(--gold); }
-.rank-2 td:first-child { color: #adb5bd; }
-.rank-3 td:first-child { color: #cd7f32; }
+        .hud-label {
+            font-size: 14px;
+            color: var(--dim);
+            margin-bottom: 5px;
+        }
 
-/* ─── FLOATING TEXT ────────────────────────────────────── */
-.float-txt {
-  position: fixed;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 26px;
-  letter-spacing: 2px;
-  pointer-events: none;
-  animation: floatUp .9s forwards;
-  z-index: 100;
-}
-@keyframes floatUp {
-  0%   { opacity:1; transform:translateY(0) scale(1); }
-  100% { opacity:0; transform:translateY(-60px) scale(1.3); }
-}
+        .hud-value {
+            color: var(--text);
+            font-size: 32px;
+        }
 
-/* ─── PLAYER TAG ───────────────────────────────────────── */
-.player-tag {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
-  color: var(--dim);
-  letter-spacing: 2px;
-}
-.player-tag span { color: var(--gold); }
-</style>
+        .hud-value.timer {
+            color: var(--gold);
+        }
+
+        .hud-value.timer.danger {
+            color: var(--red);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .canvas-container {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            background: #070710;
+        }
+
+        /* Floating text */
+        .floating-text {
+            position: absolute;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 10;
+        }
+
+        .floating-text.hit {
+            color: var(--gold);
+        }
+
+        .floating-text.miss {
+            color: var(--red);
+            font-size: 36px;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+        }
+
+        /* Leaderboard Screen */
+        .leaderboard-card {
+            background: var(--card);
+            padding: 40px 60px;
+            border: 1px solid var(--border);
+            border-top: 2px solid linear-gradient(to right, var(--red), var(--gold));
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .result-banner {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .result-banner.win {
+            color: var(--gold);
+            text-shadow: 0 0 15px rgba(255, 214, 10, 0.6);
+        }
+
+        .result-banner.lose {
+            color: var(--red);
+            text-shadow: 0 0 15px rgba(230, 57, 70, 0.6);
+        }
+
+        .round-stats {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text);
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .leaderboard-table th {
+            text-align: left;
+            padding: 12px 16px;
+            color: var(--dim);
+            font-size: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .leaderboard-table td {
+            padding: 14px 16px;
+            font-size: 20px;
+            border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+        }
+
+        .leaderboard-table tr:hover {
+            background: rgba(230, 57, 70, 0.1);
+        }
+
+        .medal {
+            color: var(--gold);
+            margin-right: 8px;
+        }
+
+        .current-player-highlight {
+            background: rgba(87, 204, 153, 0.2);
+            border-left: 4px solid var(--green);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 48px; }
+            .hud { gap: 20px; }
+            .hud-value { font-size: 24px; }
+            .leaderboard-card { padding: 20px 30px; }
+        }
+    </style>
 </head>
 <body>
-
-<!-- ══════════════ LOGIN SCREEN ══════════════ -->
-<div id="loginScreen" class="screen active">
-  <div class="logo">DART<br>SHOOTER</div>
-  <div class="logo-sub">Arcade Edition · Local Build</div>
-
-  <div class="card">
-    <h2>PILIH PEMAIN</h2>
-    <select id="playerSelect">
-      <option value="">— Pilih nama —</option>
-    </select>
-    <button class="btn btn-primary" onclick="loginExisting()">MASUK & MAIN</button>
-
-    <div class="divider">ATAU</div>
-
-    <input id="newNameInput" type="text" placeholder="Nama pemain baru..." maxlength="20"
-           onkeydown="if(event.key==='Enter') registerNew()">
-    <button class="btn btn-primary" onclick="registerNew()">DAFTAR & MAIN</button>
-    <div class="err" id="loginErr"></div>
-  </div>
-</div>
-
-<!-- ══════════════ GAME SCREEN ══════════════ -->
-<div id="gameScreen" class="screen">
-  <div class="hud">
-    <div class="hud-item">
-      <span class="hud-label">WAKTU</span>
-      <span class="hud-val" id="timerVal">3:00</span>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-card">
+            <h1>Dart Shooter</h1>
+            <div class="player-select">
+                <label>Or select existing player:</label>
+                <select id="existing-player">
+                    <option value="">-- Choose Player --</option>
+                </select>
+            </div>
+            <div class="player-select">
+                <label>Or enter new name:</label>
+                <input type="text" id="new-player-name" placeholder="Enter your name..." maxlength="20">
+            </div>
+            <button class="btn" id="login-btn">Start Game</button>
+        </div>
     </div>
-    <div class="hud-item">
-      <span class="player-tag">Player: <span id="playerNameTag">—</span></span>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <div class="hud">
+                <div class="hud-item">
+                    <span class="hud-label">Player</span>
+                    <span class="hud-value" id="hud-player">Player</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">Time</span>
+                    <span class="hud-value timer" id="hud-time">03:00</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">Score</span>
+                    <span class="hud-value" id="hud-score">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">Misses</span>
+                    <span class="hud-value" id="hud-misses">0/5</span>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="game-canvas" width="800" height="600"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="hud-item">
-      <span class="hud-label">SKOR</span>
-      <span class="hud-val" id="scoreVal">0</span>
+
+    <!-- Leaderboard Screen -->
+    <div id="leaderboard-screen" class="screen">
+        <div class="leaderboard-card">
+            <div class="result-banner" id="result-banner">TIME UP!</div>
+            <div class="round-stats">
+                <span>Player: <span id="lb-player">Player</span></span> &nbsp;|&nbsp;
+                <span>Score: <span id="lb-score" style="color: var(--gold)">0</span></span> &nbsp;|&nbsp;
+                <span>Misses: <span id="lb-misses">0</span>/5</span>
+            </div>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Best Score</th>
+                        <th>Games Played</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Rows will be filled by JS -->
+                </tbody>
+            </table>
+            <div>
+                <button class="btn" id="play-again-btn">Play Again</button>
+                <button class="btn btn-secondary" id="change-player-btn">Change Player</button>
+            </div>
+        </div>
     </div>
-    <div class="hud-item">
-      <span class="hud-label">MISS</span>
-      <span class="hud-val" id="missVal">0/5</span>
-    </div>
-  </div>
-  <canvas id="gameCanvas" width="820" height="480"></canvas>
-</div>
 
-<!-- ══════════════ LEADERBOARD SCREEN ══════════════ -->
-<div id="lbScreen" class="screen">
-  <div class="result-banner" id="resultBanner">GAME OVER</div>
-  <div class="result-score" id="resultDetail"></div>
+    <script>
+        // Game Constants
+        const MAX_TIME = 180;
+        const TARGET_RADIUS = 52;
+        const MAX_MISSES = 5;
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
 
-  <div class="card" style="max-width:600px">
-    <h2>🏆 LEADERBOARD</h2>
-    <table class="lb-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>NAMA</th>
-          <th>BEST SCORE</th>
-          <th>GAMES</th>
-        </tr>
-      </thead>
-      <tbody id="lbBody"></tbody>
-    </table>
-  </div>
+        // Game State
+        let gameState = {
+            player: null,
+            score: 0,
+            misses: 0,
+            timeLeft: MAX_TIME,
+            elapsed: 0,
+            gameActive: false,
+            target: { x: 0, y: 0, dx: 0, dy: 0, speed: 0 }
+        };
 
-  <button class="btn btn-primary" style="max-width:300px" onclick="showLogin()">MAIN LAGI</button>
-  <button class="btn btn-secondary" style="max-width:300px" onclick="logout()">GANTI PEMAIN</button>
-</div>
+        let timerInterval = null;
+        let animationFrameId = null;
 
-<script>
-// ═══════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════
-let currentPlayer = null;   // { id, name }
-let score = 0, misses = 0, timeLeft = 180;
-let gameActive = false, timerInterval = null, animId = null;
+        // DOM Elements
+        const screens = {
+            login: document.getElementById('login-screen'),
+            game: document.getElementById('game-screen'),
+            leaderboard: document.getElementById('leaderboard-screen')
+        };
+        const existingPlayerSelect = document.getElementById('existing-player');
+        const newPlayerInput = document.getElementById('new-player-name');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
 
-const MAX_TIME   = 180;
-const MAX_MISSES = 5;
-const TARGET_R   = 52;     // radius lingkaran target
+        // API Endpoints
+        const API = {
+            players: '/api/players',
+            scores: '/api/scores',
+            leaderboard: '/api/leaderboard'
+        };
 
-// Target state
-let tx = 400, ty = 240;
-let dx = 2.5, dy = 1.8;
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initLogin();
+            setupEventListeners();
+        });
 
-const canvas  = document.getElementById('gameCanvas');
-const ctx     = canvas.getContext('2d');
+        function initLogin() {
+            fetchPlayers();
+        }
 
-// ═══════════════════════════════════════════════════════
-//  SCREEN HELPERS
-// ═══════════════════════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-function showLogin() { showScreen('loginScreen'); loadPlayers(); }
-function logout()    { currentPlayer = null; showLogin(); }
+        async function fetchPlayers() {
+            try {
+                const response = await fetch(API.players);
+                const players = await response.json();
+                existingPlayerSelect.innerHTML = '<option value="">-- Choose Player --</option>';
+                players.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.name;
+                    existingPlayerSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching players:', error);
+            }
+        }
 
-// ═══════════════════════════════════════════════════════
-//  API HELPERS
-// ═══════════════════════════════════════════════════════
-async function api(path, opts = {}) {
-  const r = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts
-  });
-  return r.json();
-}
+        function setupEventListeners() {
+            document.getElementById('login-btn').addEventListener('click', handleLogin);
+            existingPlayerSelect.addEventListener('change', () => {
+                if (existingPlayerSelect.value) {
+                    newPlayerInput.value = '';
+                }
+            });
+            newPlayerInput.addEventListener('input', () => {
+                if (newPlayerInput.value) {
+                    existingPlayerSelect.value = '';
+                }
+            });
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                switchScreen('game');
+                startGame();
+            });
+            document.getElementById('change-player-btn').addEventListener('click', () => {
+                switchScreen('login');
+            });
 
-// ═══════════════════════════════════════════════════════
-//  LOGIN
-// ═══════════════════════════════════════════════════════
-async function loadPlayers() {
-  const players = await api('/api/players');
-  const sel = document.getElementById('playerSelect');
-  sel.innerHTML = '<option value="">— Pilih nama —</option>';
-  players.forEach(p => {
-    const o = document.createElement('option');
-    o.value = p.id;
-    o.textContent = p.name;
-    sel.appendChild(o);
-  });
-}
+            // Canvas click handler for shooting
+            canvas.addEventListener('click', handleCanvasClick);
+        }
 
-async function loginExisting() {
-  const sel = document.getElementById('playerSelect');
-  const id  = sel.value;
-  if (!id) return setErr('Pilih nama dulu bro!');
-  const name = sel.options[sel.selectedIndex].text;
-  currentPlayer = { id: parseInt(id), name };
-  startGame();
-}
+        async function handleLogin() {
+            let playerId, playerName;
 
-async function registerNew() {
-  const name = document.getElementById('newNameInput').value.trim();
-  if (!name) return setErr('Nama tidak boleh kosong!');
-  const res = await api('/api/players', {
-    method: 'POST',
-    body: JSON.stringify({ name })
-  });
-  if (res.error) return setErr(res.error);
-  currentPlayer = { id: res.id, name: res.name };
-  document.getElementById('newNameInput').value = '';
-  startGame();
-}
+            if (existingPlayerSelect.value) {
+                playerId = parseInt(existingPlayerSelect.value);
+                playerName = existingPlayerSelect.options[existingPlayerSelect.selectedIndex].text;
+            } else if (newPlayerInput.value.trim()) {
+                playerName = newPlayerInput.value.trim();
+                try {
+                    const response = await fetch(API.players, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: playerName })
+                    });
 
-function setErr(msg) {
-  const el = document.getElementById('loginErr');
-  el.textContent = msg;
-  setTimeout(() => { el.textContent = ''; }, 3000);
-}
+                    if (response.ok) {
+                        const data = await response.json();
+                        playerId = data.id;
+                    } else if (response.status === 409) {
+                        // Player exists, find them
+                        const findResponse = await fetch(`${API.players}/${encodeURIComponent(playerName)}`);
+                        if (findResponse.ok) {
+                            const data = await findResponse.json();
+                            playerId = data.id;
+                        } else {
+                            alert('Error logging in. Please try again.');
+                            return;
+                        }
+                    } else {
+                        alert('Error creating player. Please try again.');
+                        return;
+                    }
+                } catch (error) {
+                    alert('Error connecting to server. Please try again.');
+                    return;
+                }
+            } else {
+                alert('Please select or enter a player name.');
+                return;
+            }
 
-// ═══════════════════════════════════════════════════════
-//  GAME
-// ═══════════════════════════════════════════════════════
-function startGame() {
-  score = 0; misses = 0; timeLeft = MAX_TIME;
-  gameActive = true;
-  updateHUD();
-  document.getElementById('playerNameTag').textContent = currentPlayer.name;
-  showScreen('gameScreen');
+            gameState.player = { id: playerId, name: playerName };
+            switchScreen('game');
+            startGame();
+        }
 
-  // Posisi & arah awal acak
-  tx = 150 + Math.random() * (canvas.width  - 300);
-  ty = 100 + Math.random() * (canvas.height - 200);
-  const angle = Math.random() * Math.PI * 2;
-  dx = Math.cos(angle) * 2.5;
-  dy = Math.sin(angle) * 2.0;
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
 
-  clearInterval(timerInterval);
-  timerInterval = setInterval(tick, 1000);
-  cancelAnimationFrame(animId);
-  loop();
-}
+            // Refresh player list when going back to login
+            if (screenName === 'login') {
+                fetchPlayers();
+            }
+        }
 
-function tick() {
-  timeLeft--;
-  updateHUD();
-  if (timeLeft <= 0) endGame('win');
-}
+        function startGame() {
+            // Reset state
+            gameState.score = 0;
+            gameState.misses = 0;
+            gameState.timeLeft = MAX_TIME;
+            gameState.elapsed = 0;
+            gameState.gameActive = true;
 
-function updateHUD() {
-  const m = String(Math.floor(timeLeft / 60)).padStart(1,'0');
-  const s = String(timeLeft % 60).padStart(2,'0');
-  document.getElementById('timerVal').textContent = `${m}:${s}`;
-  document.getElementById('scoreVal').textContent  = score;
-  document.getElementById('missVal').textContent   = `${misses}/${MAX_MISSES}`;
+            // Update HUD
+            updateHUD();
 
-  // Timer danger color
-  const tv = document.getElementById('timerVal');
-  tv.style.color = timeLeft <= 30 ? 'var(--red)' : 'var(--gold)';
-}
+            // Spawn target
+            spawnTarget();
 
-// ─── GAME LOOP ───────────────────────────────────────
-function loop() {
-  if (!gameActive) return;
-  update();
-  draw();
-  animId = requestAnimationFrame(loop);
-}
+            // Start timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                gameState.elapsed++;
+                updateHUD();
 
-function update() {
-  // Kecepatan naik seiring waktu
-  const elapsed = MAX_TIME - timeLeft;
-  const spd = 2.2 + elapsed * 0.028;
-  const len = Math.hypot(dx, dy);
-  dx = (dx / len) * spd;
-  dy = (dy / len) * spd;
+                if (gameState.timeLeft <= 0) {
+                    endGame('win');
+                }
+            }, 1000);
 
-  tx += dx; ty += dy;
-  if (tx < TARGET_R || tx > canvas.width  - TARGET_R) { dx *= -1; tx = Math.max(TARGET_R, Math.min(canvas.width  - TARGET_R, tx)); }
-  if (ty < TARGET_R || ty > canvas.height - TARGET_R) { dy *= -1; ty = Math.max(TARGET_R, Math.min(canvas.height - TARGET_R, ty)); }
-}
+            // Start game loop
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameLoop();
+        }
 
-// ─── DRAW ────────────────────────────────────────────
-const RINGS = [
-  { r: 1.00, color: '#1a1a2e' },   // luar (ring 6)
-  { r: 0.78, color: '#e63946' },   // merah
-  { r: 0.60, color: '#f1faee' },   // putih
-  { r: 0.42, color: '#1d3557' },   // biru
-  { r: 0.26, color: '#f1faee' },   // putih
-  { r: 0.14, color: '#e63946' },   // merah
-  { r: 0.06, color: '#ffd60a' },   // bullseye kuning
-];
+        function spawnTarget() {
+            const padding = TARGET_RADIUS + 10;
+            gameState.target.x = padding + Math.random() * (CANVAS_WIDTH - padding * 2);
+            gameState.target.y = padding + Math.random() * (CANVAS_HEIGHT - padding * 2);
 
-function drawTarget(x, y) {
-  // Shadow/glow
-  ctx.save();
-  ctx.shadowColor = 'rgba(230,57,70,0.35)';
-  ctx.shadowBlur  = 28;
+            // Random angle, speed 1.2 initially
+            const angle = Math.random() * Math.PI * 2;
+            gameState.target.dx = Math.cos(angle);
+            gameState.target.dy = Math.sin(angle);
+            gameState.target.speed = 1.2;
+        }
 
-  RINGS.forEach(({ r, color }) => {
-    ctx.beginPath();
-    ctx.arc(x, y, TARGET_R * r, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-  });
+        function getTargetSpeed() {
+            return 1.2 + gameState.elapsed * 0.025;
+        }
 
-  // Ring borders
-  [1, 0.78, 0.60, 0.42, 0.26, 0.14].forEach(r => {
-    ctx.beginPath();
-    ctx.arc(x, y, TARGET_R * r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-  });
+        function update() {
+            if (!gameState.gameActive) return;
 
-  // Crosshair lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 0.7;
-  ctx.beginPath(); ctx.moveTo(x - TARGET_R, y); ctx.lineTo(x + TARGET_R, y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y - TARGET_R); ctx.lineTo(x, y + TARGET_R); ctx.stroke();
+            // Update speed based on elapsed time
+            const currentSpeed = getTargetSpeed();
 
-  ctx.restore();
-}
+            // Move target
+            gameState.target.x += gameState.target.dx * currentSpeed;
+            gameState.target.y += gameState.target.dy * currentSpeed;
 
-function drawBg() {
-  ctx.fillStyle = '#070710';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Bounce off walls
+            if (gameState.target.x - TARGET_RADIUS < 0) {
+                gameState.target.x = TARGET_RADIUS;
+                gameState.target.dx *= -1;
+            } else if (gameState.target.x + TARGET_RADIUS > CANVAS_WIDTH) {
+                gameState.target.x = CANVAS_WIDTH - TARGET_RADIUS;
+                gameState.target.dx *= -1;
+            }
 
-  // subtle grid
-  ctx.strokeStyle = 'rgba(30,30,60,0.6)';
-  ctx.lineWidth = 0.5;
-  for (let x = 0; x < canvas.width; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-  }
-  for (let y = 0; y < canvas.height; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-  }
-}
+            if (gameState.target.y - TARGET_RADIUS < 0) {
+                gameState.target.y = TARGET_RADIUS;
+                gameState.target.dy *= -1;
+            } else if (gameState.target.y + TARGET_RADIUS > CANVAS_HEIGHT) {
+                gameState.target.y = CANVAS_HEIGHT - TARGET_RADIUS;
+                gameState.target.dy *= -1;
+            }
+        }
 
-function draw() {
-  drawBg();
-  drawTarget(tx, ty);
-}
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#070710';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-// ─── CLICK / SHOOT ───────────────────────────────────
-canvas.addEventListener('click', e => {
-  if (!gameActive) return;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const cx = (e.clientX - rect.left) * scaleX;
-  const cy = (e.clientY - rect.top)  * scaleY;
+            // Draw grid
+            drawGrid();
 
-  const dist  = Math.hypot(cx - tx, cy - ty);
-  const ratio = dist / TARGET_R;
+            // Draw target
+            drawTarget();
+        }
 
-  let pts = 0;
-  if      (ratio <= 0.06) pts = 50;
-  else if (ratio <= 0.14) pts = 40;
-  else if (ratio <= 0.26) pts = 30;
-  else if (ratio <= 0.42) pts = 20;
-  else if (ratio <= 0.60) pts = 15;
-  else if (ratio <= 0.78) pts = 10;
-  else if (ratio <= 1.00) pts = 5;
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(30, 30, 60, 0.6)';
+            ctx.lineWidth = 1;
 
-  if (pts > 0) {
-    score += pts;
-    floatText(`+${pts}`, e.clientX, e.clientY, pts === 50 ? '#ffd60a' : '#57cc99');
-    // Pindah ke posisi baru setelah kena
-    const angle = Math.random() * Math.PI * 2;
-    const elapsed = MAX_TIME - timeLeft;
-    const spd = 2.2 + elapsed * 0.028;
-    dx = Math.cos(angle) * spd;
-    dy = Math.sin(angle) * spd;
-    tx = 150 + Math.random() * (canvas.width  - 300);
-    ty = 100 + Math.random() * (canvas.height - 200);
-  } else {
-    misses++;
-    floatText('MISS!', e.clientX, e.clientY, '#e63946');
-    if (misses >= MAX_MISSES) endGame('lose');
-  }
-  updateHUD();
-});
+            for (let x = 0; x <= CANVAS_WIDTH; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, CANVAS_HEIGHT);
+                ctx.stroke();
+            }
 
-// ─── FLOATING TEXT ───────────────────────────────────
-function floatText(txt, x, y, color) {
-  const el = document.createElement('div');
-  el.className = 'float-txt';
-  el.textContent = txt;
-  el.style.cssText = `left:${x - 20}px; top:${y - 20}px; color:${color};`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 900);
-}
+            for (let y = 0; y <= CANVAS_HEIGHT; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(CANVAS_WIDTH, y);
+                ctx.stroke();
+            }
+        }
 
-// ═══════════════════════════════════════════════════════
-//  END GAME
-// ═══════════════════════════════════════════════════════
-async function endGame(reason) {
-  gameActive = false;
-  clearInterval(timerInterval);
-  cancelAnimationFrame(animId);
+        function drawTarget() {
+            const { x, y } = gameState.target;
+            const r = TARGET_RADIUS;
 
-  const duration = MAX_TIME - timeLeft;
-  await api('/api/scores', {
-    method: 'POST',
-    body: JSON.stringify({
-      player_id: currentPlayer.id,
-      score, misses, duration
-    })
-  });
+            // Glow effect
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(230, 57, 70, 0.5)';
 
-  const lb = await api('/api/leaderboard');
-  showLeaderboard(reason, lb);
-}
+            // Rings from outside to inside
+            // Outer rings
+            ctx.fillStyle = '#1a1a2e';
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
 
-function showLeaderboard(reason, lb) {
-  const banner = document.getElementById('resultBanner');
-  const detail = document.getElementById('resultDetail');
+            ctx.fillStyle = '#e63946';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.86, 0, Math.PI * 2);
+            ctx.fill();
 
-  if (reason === 'win') {
-    banner.textContent = 'TIME UP!';
-    banner.className   = 'result-banner win';
-  } else {
-    banner.textContent = 'GAME OVER';
-    banner.className   = 'result-banner lose';
-  }
-  detail.textContent = `${currentPlayer.name}  ·  SKOR: ${score}  ·  MISS: ${misses}/${MAX_MISSES}`;
+            ctx.fillStyle = '#f1faee';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.72, 0, Math.PI * 2);
+            ctx.fill();
 
-  const tbody = document.getElementById('lbBody');
-  tbody.innerHTML = '';
-  lb.forEach((row, i) => {
-    const tr = document.createElement('tr');
-    tr.className = (row.name === currentPlayer.name ? 'me ' : '') + `rank-${i+1}`;
-    tr.innerHTML = `
-      <td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
-      <td>${row.name}</td>
-      <td>${row.best_score}</td>
-      <td>${row.games_played}x</td>
-    `;
-    tbody.appendChild(tr);
-  });
+            ctx.fillStyle = '#1d3557';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.58, 0, Math.PI * 2);
+            ctx.fill();
 
-  showScreen('lbScreen');
-}
+            ctx.fillStyle = '#f1faee';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.44, 0, Math.PI * 2);
+            ctx.fill();
 
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
-loadPlayers();
-</script>
+            ctx.fillStyle = '#e63946';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bullseye
+            ctx.fillStyle = '#ffd60a';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Reset shadow
+            ctx.shadowBlur = 0;
+
+            // Crosshair lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x - r * 0.9, y);
+            ctx.lineTo(x + r * 0.9, y);
+            ctx.moveTo(x, y - r * 0.9);
+            ctx.lineTo(x, y + r * 0.9);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            if (!gameState.gameActive) return;
+
+            update();
+            draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function handleCanvasClick(e) {
+            if (!gameState.gameActive) return;
+
+            // Account for canvas scaling
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+
+            // Calculate distance from target center
+            const dx = clickX - gameState.target.x;
+            const dy = clickY - gameState.target.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const ratio = distance / TARGET_RADIUS;
+
+            if (ratio > 1.00) {
+                // MISS
+                gameState.misses++;
+                showFloatingText(clickX, clickY, 'MISS!', 'miss');
+                playSound('miss');
+            } else if (ratio <= 0.06) {
+                // Bullseye - 50 pts
+                addScore(50);
+                showFloatingText(clickX, clickY, '+50', 'hit');
+                playSound('hit');
+            } else if (ratio <= 0.14) {
+                // 40 pts
+                addScore(40);
+                showFloatingText(clickX, clickY, '+40', 'hit');
+                playSound('hit');
+            } else if (ratio <= 0.26) {
+                // 30 pts
+                addScore(30);
+                showFloatingText(clickX, clickY, '+30', 'hit');
+                playSound('hit');
+            } else if (ratio <= 0.42) {
+                // 20 pts
+                addScore(20);
+                showFloatingText(clickX, clickY, '+20', 'hit');
+                playSound('hit');
+            } else if (ratio <= 0.60) {
+                // 15 pts
+                addScore(15);
+                showFloatingText(clickX, clickY, '+15', 'hit');
+                playSound('hit');
+            } else if (ratio <= 0.78) {
+                // 10 pts
+                addScore(10);
+                showFloatingText(clickX, clickY, '+10', 'hit');
+                playSound('hit');
+            } else {
+                // 5 pts
+                addScore(5);
+                showFloatingText(clickX, clickY, '+5', 'hit');
+                playSound('hit');
+            }
+
+            // Respawn target on hit
+            if (gameState.gameActive) {
+                spawnTarget();
+            }
+
+            // Check for game over
+            if (gameState.misses >= MAX_MISSES) {
+                endGame('lose');
+            }
+
+            updateHUD();
+        }
+
+        function addScore(points) {
+            gameState.score += points;
+        }
+
+        function showFloatingText(x, y, text, type) {
+            const rect = canvas.getBoundingClientRect();
+            const element = document.createElement('div');
+            element.className = `floating-text ${type}`;
+            element.textContent = text;
+            element.style.left = `${rect.left + x}px`;
+            element.style.top = `${rect.top + y}px`;
+            document.body.appendChild(element);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                element.remove();
+            }, 1000);
+        }
+
+        function updateHUD() {
+            // Player name
+            document.getElementById('hud-player').textContent = gameState.player.name;
+
+            // Timer (MM:SS)
+            const minutes = Math.floor(gameState.timeLeft / 60);
+            const seconds = gameState.timeLeft % 60;
+            const timerEl = document.getElementById('hud-time');
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (gameState.timeLeft <= 30) {
+                timerEl.classList.add('danger');
+            } else {
+                timerEl.classList.remove('danger');
+            }
+
+            // Score
+            document.getElementById('hud-score').textContent = gameState.score;
+
+            // Misses
+            document.getElementById('hud-misses').textContent = `${gameState.misses}/${MAX_MISSES}`;
+        }
+
+        function endGame(reason) {
+            gameState.gameActive = false;
+
+            // Stop timers
+            clearInterval(timerInterval);
+            cancelAnimationFrame(animationFrameId);
+
+            // Save score
+            saveScore().then(() => {
+                showLeaderboard(reason);
+            });
+        }
+
+        async function saveScore() {
+            try {
+                await fetch(API.scores, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_id: gameState.player.id,
+                        score: gameState.score,
+                        misses: gameState.misses,
+                        duration: gameState.elapsed
+                    })
+                });
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
+        }
+
+        async function showLeaderboard(reason) {
+            // Show banner based on reason
+            const banner = document.getElementById('result-banner');
+            if (reason === 'win') {
+                banner.textContent = 'TIME UP!';
+                banner.className = 'result-banner win';
+            } else {
+                banner.textContent = 'GAME OVER';
+                banner.className = 'result-banner lose';
+            }
+
+            // Show round stats
+            document.getElementById('lb-player').textContent = gameState.player.name;
+            document.getElementById('lb-score').textContent = gameState.score;
+            document.getElementById('lb-misses').textContent = gameState.misses;
+
+            // Fetch leaderboard
+            try {
+                const response = await fetch(API.leaderboard);
+                const leaderboard = await response.json();
+
+                const tbody = document.getElementById('leaderboard-body');
+                tbody.innerHTML = '';
+
+                leaderboard.forEach((player, index) => {
+                    const row = document.createElement('tr');
+                    if (player.name === gameState.player.name) {
+                        row.classList.add('current-player-highlight');
+                    }
+
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const medal = index < 3 ? `<span class="medal">${medals[index]}</span>` : '';
+                    row.innerHTML = `
+                        <td>${index + 1}${medal}</td>
+                        <td>${player.name}</td>
+                        <td>${player.best_score}</td>
+                        <td>${player.games_played}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+            }
+
+            switchScreen('leaderboard');
+        }
+
+        function playSound(type) {
+            // Placeholder for sound effects
+            // In a real implementation, you'd play actual audio files here
+        }
+    </script>
 </body>
 </html>

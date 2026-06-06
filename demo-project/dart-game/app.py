@@ -1,96 +1,149 @@
-from flask import Flask, request, jsonify
-import sqlite3, os
+import os
+import sqlite3
+from datetime import datetime
+from flask import Flask, request, jsonify, send_from_directory
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC   = os.path.join(BASE_DIR, 'static')
-DB       = os.path.join(BASE_DIR, 'dart_game.db')
+app = Flask(__name__, static_folder=os.path.abspath('static'))
 
-app = Flask(__name__, static_folder=STATIC, static_url_path='')
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dart_game.db')
+
 
 def get_db():
-    conn = sqlite3.connect(DB)
+    """Get database connection with row factory for dict-like access."""
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_db():
-    with get_db() as conn:
-        conn.executescript('''
-            CREATE TABLE IF NOT EXISTS players (
-                id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS scores (
-                id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                player_id INTEGER REFERENCES players(id),
-                score     INTEGER NOT NULL,
-                misses    INTEGER NOT NULL,
-                duration  INTEGER NOT NULL,
-                played_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        ''')
 
-# ── Serve frontend ──────────────────────────────────────────────
+def init_db():
+    """Initialize database schema."""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Create players table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS players (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')
+
+    # Create scores table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id INTEGER NOT NULL,
+            score INTEGER NOT NULL,
+            misses INTEGER NOT NULL,
+            duration INTEGER NOT NULL,
+            played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (player_id) REFERENCES players(id)
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    """Serve the static index.html file."""
+    return send_from_directory(app.static_folder, 'index.html')
 
-# ── Players ─────────────────────────────────────────────────────
+
 @app.route('/api/players', methods=['GET'])
 def list_players():
-    with get_db() as conn:
-        rows = conn.execute('SELECT id, name FROM players ORDER BY name').fetchall()
-    return jsonify([dict(r) for r in rows])
+    """List all players."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name FROM players ORDER BY name')
+    players = [{'id': row['id'], 'name': row['name']} for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(players)
+
 
 @app.route('/api/players', methods=['POST'])
 def create_player():
-    name = (request.json or {}).get('name', '').strip()
+    """Create a new player."""
+    data = request.get_json()
+    name = data.get('name', '').strip()
+
     if not name:
-        return jsonify({'error': 'Nama tidak boleh kosong'}), 400
+        return jsonify({'error': 'Name is required'}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
     try:
-        with get_db() as conn:
-            cur = conn.execute('INSERT INTO players (name) VALUES (?)', (name,))
-            player_id = cur.lastrowid
+        cursor.execute('INSERT INTO players (name) VALUES (?)', (name,))
+        conn.commit()
+        player_id = cursor.lastrowid
+        conn.close()
         return jsonify({'id': player_id, 'name': name}), 201
     except sqlite3.IntegrityError:
-        return jsonify({'error': 'Nama sudah dipakai'}), 409
+        conn.close()
+        return jsonify({'error': 'Player name already taken'}), 409
 
-@app.route('/api/players/<name>', methods=['GET'])
-def find_player(name):
-    with get_db() as conn:
-        row = conn.execute('SELECT id, name FROM players WHERE name = ?', (name,)).fetchone()
+
+@app.route('/api/players/<name>')
+def get_player(name):
+    """Find a player by name."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name FROM players WHERE name = ?', (name,))
+    row = cursor.fetchone()
+    conn.close()
+
     if row:
-        return jsonify(dict(row))
-    return jsonify({'error': 'Tidak ditemukan'}), 404
+        return jsonify({'id': row['id'], 'name': row['name']})
+    return jsonify({'error': 'Player not found'}), 404
 
-# ── Scores ──────────────────────────────────────────────────────
+
 @app.route('/api/scores', methods=['POST'])
 def save_score():
-    d = request.json or {}
-    with get_db() as conn:
-        conn.execute(
-            'INSERT INTO scores (player_id, score, misses, duration) VALUES (?,?,?,?)',
-            (d['player_id'], d['score'], d['misses'], d['duration'])
-        )
-    return jsonify({'ok': True}), 201
+    """Save a score record."""
+    data = request.get_json()
+    player_id = data.get('player_id')
+    score = data.get('score')
+    misses = data.get('misses')
+    duration = data.get('duration')
 
-# ── Leaderboard ─────────────────────────────────────────────────
+    if not all([player_id, score is not None, misses is not None, duration is not None]):
+        return jsonify({'error': 'All fields are required'}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO scores (player_id, score, misses, duration) VALUES (?, ?, ?, ?)
+    ''', (player_id, score, misses, duration))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True}), 201
+
+
 @app.route('/api/leaderboard', methods=['GET'])
-def leaderboard():
-    with get_db() as conn:
-        rows = conn.execute('''
-            SELECT p.name,
-                   MAX(s.score)  AS best_score,
-                   COUNT(s.id)   AS games_played,
-                   MIN(s.misses) AS best_misses
-            FROM players p
-            JOIN scores s ON p.id = s.player_id
-            GROUP BY p.name
-            ORDER BY best_score DESC
-            LIMIT 20
-        ''').fetchall()
-    return jsonify([dict(r) for r in rows])
+def get_leaderboard():
+    """Get top 20 players by best score."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.name, MAX(s.score) as best_score, COUNT(s.id) as games_played
+        FROM players p
+        JOIN scores s ON p.id = s.player_id
+        GROUP BY p.name
+        ORDER BY best_score DESC
+        LIMIT 20
+    ''')
+    leaderboard = [{
+        'name': row['name'],
+        'best_score': row['best_score'],
+        'games_played': row['games_played']
+    } for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(leaderboard)
+
 
 if __name__ == '__main__':
     init_db()
-    print('\n🎯  Dart Game berjalan di  http://localhost:5000\n')
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
